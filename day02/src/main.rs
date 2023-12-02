@@ -5,11 +5,11 @@ use std::collections::HashMap;
 
 fn main() {
     match part01() {
-        Ok(calibration_sum) => println!("sum of possible game ids part01: {}", calibration_sum),
+        Ok(sum_of_possible_game_ids) => println!("sum of possible game ids part01: {}", sum_of_possible_game_ids),
         Err(e) => println!("an error occurred in part01: {}", e),
     }
     match part02() {
-        Ok(calibration_sum) => println!("sum of possible game ids part02: {}", calibration_sum),
+        Ok(sum_of_game_power) => println!("sum of game powers part02: {}", sum_of_game_power),
         Err(e) => println!("an error occurred in part02: {}", e),
     }
 }
@@ -65,5 +65,37 @@ fn parse_draws(draws:&str) -> Vec<(u32, u32, u32)>{
 }
 
 fn part02() -> Result<u32>{
-    Ok(0)
+    let path = Path::new("./input/input.txt");
+    let file = match File::open(&path) {
+        Ok(file) => file,
+        Err(e) => panic!("could not open input file: {}", e),
+    };
+    let sum_of_game_power:u32 = 
+    BufReader::new(file).lines()
+    .map(|lr| match lr {
+        Ok(l) => {
+          let mut splitted_line = l.split(':');
+          splitted_line.next();
+
+          let mut red_cubes:u32 = 0;
+          let mut green_cubes:u32 = 0;
+          let mut blue_cubes:u32 = 0;
+          parse_draws(splitted_line.next().unwrap()).iter()
+          .for_each(|d| {
+            if d.0 > red_cubes {
+                red_cubes = d.0;
+            }
+            if d.1 > green_cubes {
+                green_cubes = d.1;
+            }
+            if d.2 > blue_cubes {
+                blue_cubes = d.2;
+            }
+          });
+          red_cubes * green_cubes * blue_cubes
+        },
+        Err(_) => panic!("could not read line"),
+    })
+    .sum();
+    Ok(sum_of_game_power)
 }
