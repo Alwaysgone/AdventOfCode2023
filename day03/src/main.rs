@@ -8,6 +8,10 @@ fn main() {
         Ok(sum_of_part_numbers) => println!("sum of part numbers part01: {}", sum_of_part_numbers),
         Err(e) => println!("an error occurred in part01: {}", e),
     }
+    match part02() {
+        Ok(sum_of_gear_ratios) => println!("sum of gear ratios part02: {}", sum_of_gear_ratios),
+        Err(e) => println!("an error occurred in part02: {}", e),
+    }
 }
 
 #[derive(Debug)]
@@ -91,4 +95,66 @@ fn get_positions_around_part(part:&Part) -> Vec<(u32,u32)> {
     (part.x_coord_start..part.x_coord_end+1).for_each(|x| positions.push((x, y_coord+1)));
 
     positions
+}
+
+fn part02() -> Result<u32> {
+    let path = Path::new("./input/input.txt");
+    let file = match File::open(&path) {
+        Ok(file) => file,
+        Err(e) => panic!("could not open input file: {}", e),
+    };
+    let mut line_number: u32 = 0;
+    let mut symbol_positions: Vec<(char, u32, u32)> = vec![];
+    let mut parts: Vec<Part> = vec![];
+    BufReader::new(file)
+        .lines()
+        .enumerate()
+        .for_each(|lr| match lr.1 {
+            Ok(l) => {
+                let re = Regex::new(r"\d+").unwrap();
+                let mut match_start:usize = 0;
+                while let Some(caps) = re.captures_at(&l, match_start) {
+                    caps.iter().for_each(|m| match m {
+                        Some(dm) => {
+                            parts.push(Part {
+                                part_number: dm.as_str().parse().unwrap(),
+                                x_coord_start: dm.start() as u32,
+                                x_coord_end: (dm.start() + dm.len() - 1) as u32,
+                                y_coord: line_number as u32,
+                            });
+                            match_start = dm.start() + dm.len();
+                        }
+                        None => {},
+                    });
+                }
+                l.chars().into_iter().enumerate().for_each(|c| {
+                    if !c.1.is_digit(10) && !c.1.eq(&'.') {
+                        symbol_positions.push((c.1, c.0 as u32, line_number));
+                    }
+                });
+                line_number = line_number + 1;
+            }
+            Err(_) => panic!("could not read line"),
+        });
+    let sum_of_gear_ratios = symbol_positions.iter()
+    .map(|sp| get_gear_ratio(sp, &parts))
+    .sum();
+    Ok(sum_of_gear_ratios)
+}
+
+fn get_gear_ratio(symbol_position:&(char, u32, u32), parts:&Vec<Part>) -> u32 {
+    if symbol_position.0.eq(&'*') {
+        let adjacent_part_numbers = get_adjacent_part_numbers(symbol_position, parts);
+        if adjacent_part_numbers.len() == 2 {
+            return adjacent_part_numbers.get(0).unwrap() * adjacent_part_numbers.get(1).unwrap();
+        }
+    }
+    return 0;
+}
+
+fn get_adjacent_part_numbers(symbol_position:&(char, u32, u32), parts:&Vec<Part>) -> Vec<u32> {
+    parts.iter()
+    .filter(|p| get_positions_around_part(p).contains(&(symbol_position.1, symbol_position.2)))
+    .map(|p| p.part_number)
+    .collect()
 }
