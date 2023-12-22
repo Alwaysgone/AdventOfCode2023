@@ -137,7 +137,10 @@ fn part02() -> Result<u64>{
         humidity_to_location,
     };
     let lowest_location_number = seed_ranges.into_iter()
-    .flat_map(|sr| sr.map(|s| mappings.get_location(s)))
+    .flat_map(|sr| {
+        println!("Calculating mappings for range {:?}", sr);
+        sr.map(|s| mappings.get_location(s))
+    })
     .min();
 
     Ok(lowest_location_number.unwrap())
